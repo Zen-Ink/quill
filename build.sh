@@ -1,15 +1,17 @@
 #!/bin/bash
-# Cross-build quill against the ferrari SDK (OS 3.26 toolchain).
-# Prereq: ~/rm-sdk-3.26 installed; libqsgepaper.so pulled from the device into ./vendor/.
+# Cross-build quill against a reMarkable SDK selected by SDK_ENV.
+# libqsgepaper.so must be available in ./vendor/ or retrievable from the device.
 set -euo pipefail
 cd "$(dirname "$0")"
 
-SDK=~/rm-sdk-3.26
-ENV=$(ls $SDK/environment-setup-* | head -n1)
+if [ -z "${SDK_ENV:-}" ] || [ ! -f "$SDK_ENV" ]; then
+    echo "SDK_ENV must name a reMarkable environment-setup file" >&2
+    exit 2
+fi
 # The SDK env script sets CC/CXX with target flags and $SDKTARGETSYSROOT.
 # It refuses to load when LD_LIBRARY_PATH is set.
 unset LD_LIBRARY_PATH
-source "$ENV"
+source "$SDK_ENV"
 
 mkdir -p build vendor
 if [ ! -f vendor/libqsgepaper.so ]; then

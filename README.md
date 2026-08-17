@@ -39,17 +39,17 @@ in `src/quill.h`.
 - `src/image_anim_demo.cpp`, `src/gif_demo.cpp` — partial-update animation
   experiments (sprites over a still image; GIF playback)
 - `scripts/takeover.sh` — stop xochitl, run app, ALWAYS restore xochitl
-- `build.sh` — cross-build against the ferrari SDK (~/rm-sdk-3.26) +
-  `vendor/libqsgepaper.so` pulled from the device (the SDK comes from
-  reMarkable's developer program; build.sh expects it unpacked at
-  `~/rm-sdk-3.26` and the tablet reachable over ssh to fetch the vendor lib)
+- `build.sh` — cross-build against the SDK selected by `SDK_ENV` +
+  `vendor/libqsgepaper.so` pulled from the device when absent (the SDK comes
+  from reMarkable's developer program)
 
 Exit the demos: power button, 5-finger tap, or SIGTERM.
 
 ## Build and verification
 
 ```sh
-./build.sh                    # cross-build with the reMarkable SDK
+SDK_ENV=/path/to/environment-setup-cortexa53-crypto-remarkable-linux \
+  ./build.sh                  # cross-build with the reMarkable SDK
 ./scripts/test-host.sh        # clipping tests with ASan and UBSan
 ./scripts/check-release.sh    # ABI and redistribution checks
 ./scripts/device-suite.sh     # on-device acceptance suite (run ON the tablet,
