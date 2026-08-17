@@ -17,7 +17,10 @@ Quill supports two verified update classes on the Paper Pro:
 
 Color is written through the captured RGB32 aux framebuffer (`B,G,R,0xFF`) and
 pushed with `quill_swap_ex(..., QUILL_CONTENT_COLOR)` or the semantic wrappers
-in `src/quill.h`.
+in `src/quill.h`. At runtime Quill supports both vendor QRect swap ABIs: the
+OS 3.28+ signature without `EPContentType` is preferred, while the older
+content-aware signature remains available as a fallback. On the current ABI,
+the selected `EPScreenMode` carries the effective mono/color behavior.
 
 - `src/vendor_probe.cpp`, `src/vendor_probe.h` — clean-room Qt/vendor boundary
   and controlled framebuffer discovery

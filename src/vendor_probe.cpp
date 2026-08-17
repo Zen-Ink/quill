@@ -181,17 +181,43 @@ int initialize(FramebufferView *view) {
 }
 
 unsigned long swap(const QRect &rect, int content_type, int mode, bool complete) {
-    using Swap = unsigned long (*)(void *, QRect, int, int, int);
-    static Swap function = [] {
-        auto resolved = reinterpret_cast<Swap>(dlsym(
+    // OS 3.28+ removed EPContentType from the QRect overload. Keep the legacy
+    // ABI for older releases, but prefer the current signature when both are
+    // exported.
+    using SwapCurrent = unsigned long (*)(void *, QRect, int, int);
+    using SwapLegacy = unsigned long (*)(void *, QRect, int, int, int);
+    struct SwapAbi {
+        SwapCurrent current = nullptr;
+        SwapLegacy legacy = nullptr;
+    };
+    static const SwapAbi functions = [] {
+        SwapAbi resolved;
+        resolved.current = reinterpret_cast<SwapCurrent>(dlsym(
+            RTLD_DEFAULT,
+            "_ZN13EPFramebuffer11swapBuffersE5QRect12EPScreenMode6QFlagsINS_10UpdateFlagEE"));
+        if (resolved.current) {
+            std::fputs("quill: using OS 3.28+ EPFramebuffer::swapBuffers ABI\n", stderr);
+            return resolved;
+        }
+        resolved.legacy = reinterpret_cast<SwapLegacy>(dlsym(
             RTLD_DEFAULT,
             "_ZN13EPFramebuffer11swapBuffersE5QRect13EPContentType12EPScreenMode6QFlagsINS_10UpdateFlagEE"));
-        if (!resolved)
-            std::fputs("quill: EPFramebuffer::swapBuffers unavailable\n", stderr);
+        if (resolved.legacy) {
+            std::fputs("quill: using legacy content-aware EPFramebuffer::swapBuffers ABI\n",
+                       stderr);
+            return resolved;
+        }
+        std::fputs("quill: EPFramebuffer::swapBuffers unavailable for both supported ABIs\n",
+                   stderr);
         return resolved;
     }();
-    if (!function || !vendor_instance) return 0;
-    return function(vendor_instance, rect, content_type, mode, complete ? 1 : 0);
+    if (!vendor_instance) return 0;
+    if (functions.current)
+        return functions.current(vendor_instance, rect, mode, complete ? 1 : 0);
+    if (functions.legacy)
+        return functions.legacy(vendor_instance, rect, content_type, mode,
+                                complete ? 1 : 0);
+    return 0;
 }
 
 } // namespace quill_vendor
