@@ -50,6 +50,8 @@ Exit the demos: power button, 5-finger tap, or SIGTERM.
 ```sh
 SDK_ENV=/path/to/environment-setup-cortexa53-crypto-remarkable-linux \
   ./build.sh                  # cross-build with the reMarkable SDK
+SDK_ENV=/path/to/environment-setup-cortexa53-crypto-remarkable-linux \
+QUILL_LIBRARY_ONLY=1 ./build.sh  # build only libquill.so for embedding
 ./scripts/test-host.sh        # clipping tests with ASan and UBSan
 ./scripts/check-release.sh    # ABI and redistribution checks
 ./scripts/device-suite.sh     # on-device acceptance suite (run ON the tablet,

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Cross-build quill against a reMarkable SDK selected by SDK_ENV.
 # libqsgepaper.so must be available in ./vendor/ or retrievable from the device.
-set -euo pipefail
+set -eo pipefail
 cd "$(dirname "$0")"
 
 if [ -z "${SDK_ENV:-}" ] || [ ! -f "$SDK_ENV" ]; then
@@ -11,7 +11,10 @@ fi
 # The SDK env script sets CC/CXX with target flags and $SDKTARGETSYSROOT.
 # It refuses to load when LD_LIBRARY_PATH is set.
 unset LD_LIBRARY_PATH
+# Yocto environment fragments may read optional variables before assigning
+# them, so nounset can only be enabled after the SDK environment is loaded.
 source "$SDK_ENV"
+set -u
 
 mkdir -p build vendor
 if [ ! -f vendor/libqsgepaper.so ]; then
@@ -28,6 +31,11 @@ $CXX -fPIC -shared -O2 -std=c++17 \
     src/vendor_probe.cpp src/quill_c.cpp \
     -L vendor -lqsgepaper -lQt6Gui -lQt6Core -ldl \
     -o build/libquill.so
+
+if [ "${QUILL_LIBRARY_ONLY:-0}" = "1" ]; then
+    echo "built: build/libquill.so"
+    exit 0
+fi
 
 # Non-destructive on-device initialization/ABI probe.
 $CC -O2 -I src tests/device_init_probe.c \
